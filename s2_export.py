@@ -90,7 +90,7 @@ def write_bands(outds, bands_gdal, bands, tgt_res, tgt_nodata=None):
         data = bands_gdal[bandname].ReadAsArray()
         zoom = res_to_float(_bands_res[bandname]) / tgt_res_float
         if zoom != 1:
-            logger.info('Interpolating data to new resolution ...')
+            logger.info('Scaling data to {} resolution ...'.format(tgt_res))
             logger.debug('Zoom factor is {}'.format(zoom))
             data = scipy.ndimage.interpolation.zoom(data, zoom, order=0)
         outds.GetRasterBand(b+1).WriteArray(data)
@@ -165,12 +165,23 @@ def get_multi_granule_subdatasets(ds):
     return granule_subdatasets
 
 
+def get_single_granule_subdatasets(ds):
+    subdatasets = ds.GetSubDatasets()
+    filelist = gdal.Open(subdatasets[0][0]).GetFileList()
+    for fname in filelist:
+        if not fname.endswith('.xml'):
+            continue
+        granule = find_granule_name(fname)
+    if granule is None:
+        raise ValueError('Unable to determine granule name.')
+    return {granule: subdatasets}
+
+
 def get_subdatasets(ds):
     subdatasets = ds.GetSubDatasets()
     if len(subdatasets) <= 5:
         logger.info('Got single-tile S2 product')
-        granule = find_granule_name(subdatasets[0][0])
-        return {granule: subdatasets}
+        return get_single_granule_subdatasets(ds)
     else:
         logger.info('Got multi-tile S2 product')
         return get_multi_granule_subdatasets(ds)
@@ -185,6 +196,31 @@ def ensure_xml(infile):
             raise ValueError('Unable to find MTD XML file with pattern \'{}\'.'.format(pattern))
     else:
         return infile
+
+
+def get_metadata_from_xml(xmlfile):
+    """Very simple XML reader"""
+    date = None
+    platform = None
+    with open(xmlfile, 'r') as f:
+        for line in f:
+            if date and platform:
+                break
+            try:
+                if 'PRODUCT_START_TIME' in line:
+                    date = re.search('\d{4}-\d{2}-\d{2}', line).group(0).replace('-', '')
+                elif 'SPACECRAFT_NAME' in line:
+                    platform = 'S' + re.search('(?<=Sentinel-)2[AB]', line).group(0)
+            except AttributeError:
+                pass
+    if date is None or platform is None:
+        raise ValueError('Unable to get all metdatada from XML file \'{}\'.'.format(xmlfile))
+    return dict(date=date, platform=platform)
+
+
+def generate_outfilename(xmlfile, granule):
+    meta = get_metadata_from_xml(xmlfile)
+    return '{platform}_{date}_T{granule}'.format(granule=granule, **meta)
 
 
 def export(infile, outdir, bands, tgt_res, granules=None):
@@ -204,6 +240,11 @@ def export(infile, outdir, bands, tgt_res, granules=None):
         data not in this resolution will be interpolated
     granules : list of str
         extract only these granules
+
+    Returns
+    -------
+    outfiles : list of str
+        list of output files generated
     """
     infile = ensure_xml(infile)
 
@@ -225,9 +266,12 @@ def export(infile, outdir, bands, tgt_res, granules=None):
 
     logger.info('Granules to export: {}'.format(list(granule_subdatasets)))
 
+    outfiles = []
     for granule in granule_subdatasets:
         logger.info('Exporting granule {} ...'.format(granule))
         subdatasets = granule_subdatasets[granule]
-        outfname = '{}_T{}.tif'.format(os.path.splitext(os.path.basename(infile))[0], granule)
+        outfname = generate_outfilename(infile, granule) + '.tif'
         outfile = os.path.join(outdir, outfname)
         export_from_subdatasets(subdatasets, bands=bands, tgt_res=tgt_res, outfile=outfile)
+        outfiles.append(outfile)
+    return outfiles
