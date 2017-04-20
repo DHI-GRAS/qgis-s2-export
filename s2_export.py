@@ -70,6 +70,20 @@ def create_outfile_from_templates(outfile, nbands, template_ds, template_band,
 
 
 def write_bands(outds, bands_gdal, bands, tgt_res, tgt_nodata=None):
+    """Read band data, zoom and write to output dataset
+
+    Parameters
+    ----------
+    outds : gdal Dataset
+        dataset to write to
+    bands_gdal : dict
+        dictionary mapping band names to open gdal bands
+    tgt_res : str
+        target resolution
+        e.g. 10m
+    tgt_nodata : float
+        target nodata
+    """
     tgt_res_float = res_to_float(tgt_res)
     for b, bandname in enumerate(bands):
         logger.info('Adding data from band {}'.format(bandname))
@@ -86,6 +100,20 @@ def write_bands(outds, bands_gdal, bands, tgt_res, tgt_nodata=None):
 
 
 def export_from_subdatasets(subdatasets, bands, tgt_res, outfile):
+    """Export selected bands from subdatasets
+
+    Parameters
+    ----------
+    subdatasets : list of (str, str)
+        returned from ds.GetSubDatasets()
+    bands : list of str
+        names of bands to extract
+    tgt_res : str
+        target resolution
+        e.g. 10m
+    outfile : str
+        path to output file
+    """
     res_dss = open_res_datasets(subdatasets)
     bands_gdal = get_gdal_bands(res_dss)
 
@@ -160,8 +188,23 @@ def ensure_xml(infile):
 
 
 def export(infile, outdir, bands, tgt_res, granules=None):
-    """Export selected S2 bands and granules to GeoTIFF"""
+    """Export selected S2 bands and granules to GeoTIFF
 
+    Parameters
+    ----------
+    infile : str
+        path to input SAFE or MTD xml file
+    outdir : str
+        path to output dir
+    bands : list of str
+        names of bands to extract
+        e.g. B1, B10 (no leading zero!)
+    tgt_res : str
+        target resolution e.g. 10m
+        data not in this resolution will be interpolated
+    granules : list of str
+        extract only these granules
+    """
     infile = ensure_xml(infile)
 
     ds = gdal.Open(infile)
@@ -177,8 +220,10 @@ def export(infile, outdir, bands, tgt_res, granules=None):
             if granule not in granules:
                 granule_subdatasets.pop(granule)
     if not granule_subdatasets:
-        logger.info('No granules left to export.')
+        logger.info('No granules left to export. Exiting.')
         return
+
+    logger.info('Granules to export: {}'.format(list(granule_subdatasets)))
 
     for granule in granule_subdatasets:
         logger.info('Exporting granule {} ...'.format(granule))
