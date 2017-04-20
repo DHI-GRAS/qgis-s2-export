@@ -19,7 +19,7 @@
 ##ParameterBoolean|allVISNIR|All VIS + NIR bands (1-8A, needed for atmospheric correction)|True
 ##ParameterString|bands_param|List of bands to export (to preserve order), e.g. 'B4,B3,B2'||False|True
 ##ParameterSelection|out_res|Output resolution|10 meter;20 meter;60 meter
-##ParameterString|granules|Only process given granules separated with comma eg. 32UNG,33UUB (To find relevant granules - check ESA kml file).|
+##ParameterString|granules|Only process given granules separated with comma eg. 32UNG,33UUB (To find relevant granules - check ESA kml file).||False|True
 ##OutputDirectory|outdir|Directory to save the exported data in
 import os
 import sys
