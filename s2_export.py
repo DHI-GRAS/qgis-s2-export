@@ -118,8 +118,18 @@ def get_granule_xml(filelist):
     return granule_xml
 
 
+def get_multi_granule_xml(ds):
+    granule_xml = OrderedDict()
+    subfiles = [e[0] for e in ds.GetSubDatasets() if 'PREVIEW' not in e[0]]
+    for sf in subfiles:
+        subsubfiles = gdal.Open(sf).GetFileList()
+        subgx = get_granule_xml(subsubfiles)
+        granule_xml.update(subgx)
+    return granule_xml
+
+
 def get_multi_granule_subdatasets(ds):
-    granule_xml = get_granule_xml(ds.GetFileList())
+    granule_xml = get_multi_granule_xml(ds)
     granule_subdatasets = OrderedDict()
     for granule in granule_xml:
         fname = granule_xml[granule]

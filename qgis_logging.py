@@ -14,6 +14,6 @@ class ProgressHandler(logging.StreamHandler):
 def set_progress_logger(name, progress, level='INFO'):
     logger = logging.getLogger(name)
     progress_handler = ProgressHandler(progress)
-    logger.setHandler(progress_handler)
+    logger.addHandler(progress_handler)
     logger.setLevel(level)
     return logger

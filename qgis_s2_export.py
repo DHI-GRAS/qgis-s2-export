@@ -17,10 +17,9 @@
 ##ParameterBoolean|B11|Band 11 (Snow/Ice/Cloud 20m)|False
 ##ParameterBoolean|B12|Band 12 (Snow/Ice/Cloud 20m)|False
 ##ParameterBoolean|allVISNIR|All VIS + NIR bands (1-8A, needed for atmospheric correction)|True
+##ParameterString|bands_param|List of bands to export (to preserve order), e.g. 'B4,B3,B2'||False
 ##ParameterSelection|out_res|Output resolution|10 meter;20 meter;60 meter
 ##ParameterString|granules|Only process given granules separated with comma eg. 32UNG,33UUB (To find relevant granules - check ESA kml file).|
-##*ParameterNumber|maxCldCov|Maximum cloud cover %|0|100|100
-##*ParameterNumber|minDataCov|Minimum data cover %|0|100|0
 ##OutputDirectory|outdir|Directory to save the exported data in
 import os
 import sys
@@ -39,7 +38,7 @@ def _sortfunc(s):
 
 def flags_to_bandlist(allVISNIR=False, **bandflags):
     if allVISNIR:
-        return ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B8A']
+        return ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A']
 
     else:
         bands = [k for k in bandflags if bandflags[k]]
@@ -51,12 +50,16 @@ set_progress_logger(name='s2_export', progress=progress)
 
 kwargs = {}
 
-kwargs['bands'] = flags_to_bandlist(
-        B1=B1, B2=B2, B3=B3, B4=B4, B5=B5,
-        B6=B6, B7=B7, B8=B8, B8A=B8A, B9=B9,
-        B10=B10, B11=B11, B12=B12, allVISNIR=allVISNIR)
+bands_param = bands_param.replace(' ', '')
+if bands_param:
+    kwargs['bands'] = bands_param.split(',')
+else:
+    kwargs['bands'] = flags_to_bandlist(
+            B1=B1, B2=B2, B3=B3, B4=B4, B5=B5,
+            B6=B6, B7=B7, B8=B8, B8A=B8A, B9=B9,
+            B10=B10, B11=B11, B12=B12, allVISNIR=allVISNIR)
 
-kwargs['res_dst'] = ["10m", "20m", "60m"][out_res]
+kwargs['tgt_res'] = ["10m", "20m", "60m"][out_res]
 
 if granules.strip():
     kwargs['granules'] = granules.split(',')
