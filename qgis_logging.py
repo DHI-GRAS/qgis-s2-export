@@ -8,7 +8,7 @@ class ProgressHandler(logging.StreamHandler):
 
     def emit(self, record):
         msg = self.format(record)
-        self.progress.setConsoleInfo(msg)
+        self.feedback.pushConsoleInfo(msg)
 
 
 def set_progress_logger(name, progress, level='INFO'):
