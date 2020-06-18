@@ -120,7 +120,8 @@ from qgis.processing import alg
     type=alg.ENUM,
     name="out_res",
     label="Output resolution",
-    options=['10 meter','20 meter','60 meter']
+    options=['10 meter','20 meter','60 meter'],
+    default=0,
 )
 @alg.input(
     type=str,
