@@ -1,18 +1,16 @@
 import os
-import sys
 import re
 from processing.tools import dataobjects
 import logging
 import glob
-import logging
 from collections import OrderedDict
 
 import gdal
 import scipy.ndimage
 
-#import s2_export # TODO IMPORT
-#from qgis_logging import set_progress_logger TODO IMPORT
 from qgis.processing import alg
+
+
 @alg(
     name="exportsentinel2data",
     label=alg.tr("Export Sentinel-2 data"),
@@ -150,7 +148,7 @@ def exportsentinel2data(instance, parameters, context, feedback, inputs):
     bands_param = instance.parameterAsString(parameters, 'bands_param', context)
     out_res = instance.parameterAsString(parameters, 'out_res', context)
     granules = instance.parameterAsString(parameters, 'granules', context)
-    
+
     logger = logging.getLogger('s2_export')
 
     _res_bands = OrderedDict([
@@ -436,7 +434,7 @@ def exportsentinel2data(instance, parameters, context, feedback, inputs):
         logger.setLevel(level)
         return logger
 
-    def _sortfunc(s):  
+    def _sortfunc(s):
         s = re.sub('(?<=\d)A', '.5', s)
         return float(re.search('\d+\.?\d*', s).group(0))
 
