@@ -127,10 +127,11 @@ from qgis.processing import alg
     label="Only process given granules separated with comma eg. 32UNG,33UUB (To find relevant granules - check ESA kml file).",
     optional=True,
 )
-@alg.input(type=alg.FILE_DEST, name="outdir", label="Directory to save the exported data in")
+@alg.input(type=alg.FOLDER_DEST, name="outDir", label="Directory to save the exported data in")
 def exportsentinel2data(instance, parameters, context, feedback, inputs):
     """ exportsentinel2data """
     inFile = instance.parameterAsString(parameters, 'inFile', context)
+    outDir = instance.parameterAsString(parameters, 'outDir', context)
     B1 = instance.parameterAsBool(parameters, 'B1', context)
     B2 = instance.parameterAsBool(parameters, 'B2', context)
     B3 = instance.parameterAsBool(parameters, 'B3', context)
@@ -146,7 +147,7 @@ def exportsentinel2data(instance, parameters, context, feedback, inputs):
     B12 = instance.parameterAsBool(parameters, 'B12', context)
     allVISNIR = instance.parameterAsBool(parameters, 'allVISNIR', context)
     bands_param = instance.parameterAsString(parameters, 'bands_param', context)
-    out_res = instance.parameterAsString(parameters, 'out_res', context)
+    out_res = instance.parameterAsInt(parameters, 'out_res', context)
     granules = instance.parameterAsString(parameters, 'granules', context)
 
     logger = logging.getLogger('s2_export')
@@ -421,15 +422,15 @@ def exportsentinel2data(instance, parameters, context, feedback, inputs):
 
         def __init__(self, progress):
             super(self.__class__, self).__init__()
-            self.progress = progress
+            self.feedback = feedback
 
         def emit(self, record):
             msg = self.format(record)
             self.feedback.pushConsoleInfo(msg)
 
-    def set_progress_logger(name, progress, level='INFO'):
+    def set_progress_logger(name, feedback, level='INFO'):
         logger = logging.getLogger(name)
-        progress_handler = ProgressHandler(progress)
+        progress_handler = ProgressHandler(feedback)
         logger.addHandler(progress_handler)
         logger.setLevel(level)
         return logger
@@ -449,7 +450,7 @@ def exportsentinel2data(instance, parameters, context, feedback, inputs):
             return bands
 
 
-    set_progress_logger(name='s2_export', progress=progress)
+    set_progress_logger(name='s2_export', feedback=feedback)
 
     kwargs = {}
 
@@ -467,8 +468,8 @@ def exportsentinel2data(instance, parameters, context, feedback, inputs):
     if granules.strip():
         kwargs['granules'] = granules.split(',')
 
-    kwargs['infile'] = infile
-    kwargs['outdir'] = outdir
+    kwargs['infile'] = inFile
+    kwargs['outdir'] = outDir
 
 
     outfiles = export(**kwargs)
